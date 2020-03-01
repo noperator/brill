@@ -1,0 +1,20 @@
+families = [
+    ['jane', 'john'],
+    ['bob', 'alice']
+]
+
+[phone]
+jane  = '123-456-7890'
+john  = '234-567-8901'
+bob   = '345-678-9012'
+alice = '456-789-0123'
+
+[login]
+user_id  = 'user_id'
+password = 'password'
+
+[chrome]
+debug_port        = '9222'
+download_path     = '.'
+chromium_path     = '/usr/local/bin/chromium'
+chromedriver_path = '/usr/local/bin/chromedriver'
