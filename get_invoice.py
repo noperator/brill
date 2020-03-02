@@ -7,7 +7,7 @@
 
 from os import path, rename
 from pathlib import Path
-from sys import stdout
+from sys import stdout, exit
 from time import sleep
 
 from selenium import webdriver  
@@ -77,7 +77,7 @@ def login(driver, login_config):
             driver.find_element_by_name('otpCode').send_keys(otp_code)
             driver.find_element_by_xpath("//button[contains(.,'Verify and register device')]").send_keys(Keys.ENTER)
         except:
-            print('Login unsuccessful.')
+            exit('login unsuccessful.')
 
 def list_invoices(driver):
     print('Getting invoice page...', end='')
