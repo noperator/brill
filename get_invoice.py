@@ -2,20 +2,17 @@
 
 # TODO:
 # - proper wait for loading breakdown page
-# - move data to seperate config file
 # - automate reports sent to terminal/file
 #   - clean up redundant vbilling output
 
 # Chrome(driver) download instructions:
 # https://www.chromium.org/getting-involved/download-chromium
 
-# from json import dumps
 from os import path, rename
 from pathlib import Path
 from sys import stdout
 from time import sleep
 
-# from browsermobproxy import Server
 from selenium import webdriver  
 from selenium.webdriver.chrome.options import Options  
 from selenium.webdriver.common.keys import Keys  
@@ -23,6 +20,7 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
 from toml import load
 
+# Debug:
 # from code import interact
 # from pprint import pprint
 # interact(local=locals())
@@ -88,7 +86,7 @@ def login(driver, login_config):
         except:
             print('Login unsuccessful.')
 
-def get_invoice(driver):
+def list_invoices(driver):
     print('Getting invoice page...', end='')
     stdout.flush()
     driver.get('https://epb.verizonwireless.com/epass/reporting/main.go#/viewInvoices')
@@ -100,15 +98,26 @@ def get_invoice(driver):
     sleep(5)
     
     # Get list of invoice dates from dropdown menu.
-    dates = driver.execute_script('dates = angular.element($(\'#statementdates\')).scope().overview.invoiceData; return dates')
-    for i, date in enumerate(dates):
-        print('[' + str(i + 1) + ']', date['invoiceFormattedDate'])
+    return driver.execute_script('return angular.element($(\'#statementdates\')).scope().overview.invoiceData')
+
+def get_invoice(driver, choice, date_str, download_path):
+    print('Getting invoice page...', end='')
+    stdout.flush()
+    driver.get('https://epb.verizonwireless.com/epass/reporting/main.go#/viewInvoices')
+    try:
+        WebDriverWait(driver, 10).until(ec.title_contains('Wireless Reports'))
+        print('success.')
+    except:
+        print('unsuccessful.')
+    sleep(5)
     
     # Load invoice data for specified date.
-    date_choice = int(input('Choose invoice date index: ')) - 1
-    driver.execute_script("return angular.element($('#statementdates')).scope().overview.updateQuickBillSummaryDataByDate(dates[" + str(date_choice) + '])')
+    overview = "angular.element($(\'#statementdates\')).scope().overview"
+    date = overview + '.invoiceData[' + str(choice) + ']'
+    driver.execute_script('return ' + overview + '.updateQuickBillSummaryDataByDate(' + date + ')')
 
-    print('Downloading bill...')
+    print('Downloading bill...', end='')
+    stdout.flush()
     driver.execute_script('angular.element($(\'[ng-if="!isBillAccountDetailLoading"]\')).scope().overview.navigateToBDownChargesPage()')
     sleep(5)
     driver.get('https://b2b.verizonwireless.com/sms/amsecure/bdownchargesusage/downloadTotalCharges.go?downloadType=XML')
@@ -117,7 +126,7 @@ def get_invoice(driver):
     while not list(Path(download_path).glob('Breakdown*')):
         sleep(1)
     download_name = list(Path(download_path).glob('Breakdown*'))[0]
-    xml_bill = 'breakdown_' + dates[date_choice]['invoiceFormattedDate'].replace(' ', '_').replace(',', '').lower() + '.xml'
+    xml_bill = 'breakdown_' + date_str.replace(' ', '_').replace(',', '').lower() + '.xml'
     rename(download_name, download_path + '/' + xml_bill)
     print(xml_bill)
 
@@ -150,9 +159,16 @@ if __name__== '__main__':
     config = load('config.toml')
     driver = setup(config['chrome'])
     login(driver, config['login'])
-    get_invoice(driver)
+    dates = list_invoices(driver)
+    for i, date in enumerate(dates):
+        print('[' + str(i + 1) + ']', date['invoiceFormattedDate'])
+    choice = int(input('Choose invoice date index: ')) - 1
+    get_invoice(driver, choice, dates[choice]['invoiceFormattedDate'], config['chrome']['download_path'])
     while yes_or_no('Would you like to get another invoice?'):
-        get_invoice(driver)
+        for i, date in enumerate(dates):
+            print('[' + str(i + 1) + ']', date['invoiceFormattedDate'])
+        choice = int(input('Choose invoice date index: ')) - 1
+        get_invoice(driver, choice, dates[choice]['invoiceFormattedDate'], config['chrome']['download_path'])
     logout(driver)
 
     # from vbilling import get_data, print_table
