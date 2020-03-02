@@ -1,51 +1,50 @@
 #!/usr/bin/env python3
 
-from sys import argv
+from sys import argv, exit
 
+from beautifultable import BeautifulTable
 from bs4 import BeautifulSoup
 from toml import load
 
-def print_table(data):
-    headers = ['Billing Item', 'Cost']
-    def print_row(row, wid, sep, fil):
-        for i, elem in enumerate(row):
-            print(sep + fil + elem  + fil * (wid[i] - len(elem) - 1),
-                  end = sep + '\n' if i == len(wid) - 1 else '')
-    widths = [len(max([row[i] for row in data] + [headers[i]], key=len)) + 2
-            for i in range(len(headers))]
-    print_row([''] * len(widths), widths, '+', '-')
-    print_row(headers, widths, '|', ' ')
-    print_row([''] * len(widths), widths, '+', '-')
-    for row in data: print_row(row, widths, '|', ' ')
-    print_row([''] * len(widths), widths, '+', '-')
+# Get total charges for a given section.
+gtc = lambda tag: float(tag.find('Total_Charges').contents[0][1:])
 
-def get_shared(xml_bill):
-    soup = BeautifulSoup(open(xml_bill, 'r').read(), 'xml')
-    mtns = soup.find_all('mtn')
-    gtc = lambda tag: float(tag.find('Total_Charges').contents[0][1:])
-    user_subtotal     = gtc(soup.find('Cost_Center', text='Subtotal').parent)
-    acct_subtotal     = gtc(soup.find('Account_Charges_Voice_and_Data'))
-    ff = lambda n: str('%.2f' % n)
-    return [['User subtotal',    ff(user_subtotal)],
-            ['Account subtotal (shared)', ff(acct_subtotal)],
-            ['Total',            ff(user_subtotal + acct_subtotal)]]
+def get_overview(soup):
+    user_subtotal = gtc(soup.find('Cost_Center', text='Subtotal').parent)
+    acct_subtotal = gtc(soup.find('Account_Charges_Voice_and_Data'))
+    return user_subtotal, acct_subtotal, user_subtotal + acct_subtotal
 
-def get_data(xml_bill, accountable_mtns, family):
-    soup = BeautifulSoup(open(xml_bill, 'r').read(), 'xml')
+def get_share(soup, accountable_mtns, acct_subtotal):
     mtns = soup.find_all('mtn')
-    gtc = lambda tag: float(tag.find('Total_Charges').contents[0][1:])
-    user_subtotal     = gtc(soup.find('Cost_Center', text='Subtotal').parent)
-    acct_subtotal     = gtc(soup.find('Account_Charges_Voice_and_Data'))
-    accountable_costs = sum(gtc(mtn.parent) + acct_subtotal / len(mtns)
-    	                    for mtn in mtns if mtn.contents[0] in accountable_mtns)
-    ff = lambda n: str('%.2f' % n)
-    return [[', '.join(family), ff(accountable_costs)]]
+    return sum(gtc(mtn.parent) + acct_subtotal / len(mtns)
+    	       for mtn in mtns if mtn.contents[0] in accountable_mtns)
+
+def create_table(headers):
+    table = BeautifulTable()
+    table.set_style(BeautifulTable.STYLE_BOX_ROUNDED)
+    table.column_headers = headers
+    return table
 
 if __name__== '__main__':
-    config = load('config.toml')
     xml_bill = argv[1]
-    lines = get_shared(xml_bill)
+    soup = BeautifulSoup(open(xml_bill, 'r').read(), 'xml')
+    config = load('config.toml')
+
+    overview = create_table(['Item', 'Cost'])
+    user, account, total = get_overview(soup)
+    overview.append_row(['User subtotal', user])
+    overview.append_row(['Account subtotal', account])
+    overview.append_row(['Total', total])
+
+    split = create_table(['Family', 'Share'])
+    combined = 0
     for family in config['families']:
         numbers = [config['phone'][member] for member in family]
-        lines += get_data(xml_bill, numbers, family)
-    print_table(lines)
+        share = get_share(soup, numbers, account)
+        combined += share
+        split.append_row([', '.join([member.title() for member in family]), share])
+    split.append_row(['Total', combined])
+
+    print('Invoice:', xml_bill)
+    print(overview)
+    print(split)
