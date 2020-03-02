@@ -1,4 +1,6 @@
-![brill](https://i.imgflip.com/3r3rm5.jpg)
+<div align="center">
+  <img src="https://i.imgflip.com/3r3rm5.jpg" />
+</div>
 
 ### Description
 
