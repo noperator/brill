@@ -5,9 +5,6 @@
 # - automate reports sent to terminal/file
 #   - clean up redundant vbilling output
 
-# Chrome(driver) download instructions:
-# https://www.chromium.org/getting-involved/download-chromium
-
 from os import path, rename
 from pathlib import Path
 from sys import stdout
@@ -27,10 +24,6 @@ from toml import load
 
 def setup(chrome_config):
     print('Setting up...')
-    # server = Server(browsermob_path)
-    # server.start()
-    # proxy = server.create_proxy()
-    # proxy.new_har()
     
     # Set Chromium options and start WebDriver.
     chrome_options = Options()  
@@ -139,12 +132,7 @@ def logout(driver):
         print('success.')
     except:
         print('unsuccessful.')
-    
-    # server.stop()
     driver.quit()
-    # har_file = open('verizon_har.json', 'w')
-    # har_file.write(dumps(proxy.har))
-    # har_file.close()
 
 def yes_or_no(question):
     reply = str(input(question + ' (y/n): ')).lower().strip()
@@ -170,9 +158,3 @@ if __name__== '__main__':
         choice = int(input('Choose invoice date index: ')) - 1
         get_invoice(driver, choice, dates[choice]['invoiceFormattedDate'], config['chrome']['download_path'])
     logout(driver)
-
-    # from vbilling import get_data, print_table
-    # for family in families:
-    #     numbers = [phone_numbers[member] for member in family]
-    #     print(family)
-    #     print_table(get_data(xml_bill, numbers))
