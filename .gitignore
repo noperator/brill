@@ -2,3 +2,6 @@ config.toml
 env/
 breakdown*
 *.swp
+notes.txt
+generate_report.sh
+report.txt
