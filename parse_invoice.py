@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from sys import argv, exit
+from sys import argv
 
 from beautifultable import BeautifulTable
 from bs4 import BeautifulSoup
