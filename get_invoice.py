@@ -91,28 +91,38 @@ def list_invoices(driver):
               'Wireless Reports')
     
     # Get list of invoice dates from dropdown menu.
-    return driver.execute_script('return angular.element($(\'#statementdates\')).scope().overview.invoiceData')
+    dates = None
+    while not dates:
+        sleep(1)
+        dates = driver.execute_script('return angular.element($(\'#statementdates\')).scope().overview.invoiceData')
+    return dates
 
 def get_invoice(driver, choice, date_str, download_path):
-    print('Getting invoice page...', end='')
+    load_page('Getting invoice page',
+              'https://epb.verizonwireless.com/epass/reporting/main.go#/viewInvoices',
+              'Wireless Reports')
+
+    # Load invoice data for specified date.
+    while True:
+        try:
+            overview = "angular.element($(\'#statementdates\')).scope().overview"
+            date = overview + '.invoiceData[' + str(choice) + ']'
+            driver.execute_script('return ' + overview + '.updateQuickBillSummaryDataByDate(' + date + ')')
+            break
+        except:
+            pass
+
+    print('Getting breakdown page...', end='')
     stdout.flush()
-    driver.get('https://epb.verizonwireless.com/epass/reporting/main.go#/viewInvoices')
+    driver.execute_script('angular.element($(\'[ng-if="!isBillAccountDetailLoading"]\')).scope().overview.navigateToBDownChargesPage()')
     try:
-        WebDriverWait(driver, 10).until(ec.title_contains('Wireless Reports'))
+        WebDriverWait(driver, 10).until(ec.title_contains('Total Charges'))
         print('success.')
     except:
-        print('unsuccessful.')
-    sleep(5)
-    
-    # Load invoice data for specified date.
-    overview = "angular.element($(\'#statementdates\')).scope().overview"
-    date = overview + '.invoiceData[' + str(choice) + ']'
-    driver.execute_script('return ' + overview + '.updateQuickBillSummaryDataByDate(' + date + ')')
+        print('failed.')
 
     print('Downloading bill...', end='')
     stdout.flush()
-    driver.execute_script('angular.element($(\'[ng-if="!isBillAccountDetailLoading"]\')).scope().overview.navigateToBDownChargesPage()')
-    sleep(5)
     driver.get('https://b2b.verizonwireless.com/sms/amsecure/bdownchargesusage/downloadTotalCharges.go?downloadType=XML')
     
     # Wait for download to finish, and rename XML file.
