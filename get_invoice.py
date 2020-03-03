@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 
-# TODO:
-# - proper wait for loading breakdown page
-# - automate reports sent to terminal/file
-#   - clean up redundant vbilling output
-
 from os import path, rename
 from pathlib import Path
 from sys import stdout, exit
