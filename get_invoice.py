@@ -17,6 +17,17 @@ from toml import load
 # from pprint import pprint
 # interact(local=locals())
 
+def load_page(message, url, title):
+    print(message + '...', end='')
+    stdout.flush()
+    if url:
+        driver.get(url)
+    try:
+        WebDriverWait(driver, 10).until(ec.title_contains(title))
+        print('success.')
+    except:
+        print('failed.')
+
 def setup(chrome_config):
     print('Setting up...')
     
@@ -40,14 +51,9 @@ def setup(chrome_config):
     return driver
 
 def login(driver, login_config):
-    print('Requesting home page...', end='')
-    stdout.flush()
-    driver.get('https://b2b.verizonwireless.com/')
-    try:
-        WebDriverWait(driver, 10).until(ec.title_contains('Verizon business account login'))
-        print('success.')
-    except:
-        print('failed.')
+    load_page('Requesting home page',
+              'https://b2b.verizonwireless.com/',
+              'Verizon business account login')
     
     # Populate login form with credentials and submit.
     print('Submitting credentials...')
@@ -71,19 +77,18 @@ def login(driver, login_config):
             otp_code = input('Enter OTP code: ')
             driver.find_element_by_name('otpCode').send_keys(otp_code)
             driver.find_element_by_xpath("//button[contains(.,'Verify and register device')]").send_keys(Keys.ENTER)
+            try:
+                WebDriverWait(driver, 10).until(ec.title_contains('Landing Overview Page'))
+                print('success.')
+            except:
+                exit('login unsuccessful.')
         except:
             exit('login unsuccessful.')
 
 def list_invoices(driver):
-    print('Getting invoice page...', end='')
-    stdout.flush()
-    driver.get('https://epb.verizonwireless.com/epass/reporting/main.go#/viewInvoices')
-    try:
-        WebDriverWait(driver, 10).until(ec.title_contains('Wireless Reports'))
-        print('success.')
-    except:
-        print('unsuccessful.')
-    sleep(5)
+    load_page('Listing invoices',
+              'https://epb.verizonwireless.com/epass/reporting/main.go#/viewInvoices',
+              'Wireless Reports')
     
     # Get list of invoice dates from dropdown menu.
     return driver.execute_script('return angular.element($(\'#statementdates\')).scope().overview.invoiceData')
@@ -119,14 +124,9 @@ def get_invoice(driver, choice, date_str, download_path):
     print(xml_bill)
 
 def logout(driver):
-    print('Logging out...', end='')
-    stdout.flush()
-    driver.get('https://b2b.verizonwireless.com/sms/logout.go')
-    try:
-        WebDriverWait(driver, 10).until(ec.title_contains('Verizon business account login'))
-        print('success.')
-    except:
-        print('unsuccessful.')
+    load_page('Logging out',
+              'https://b2b.verizonwireless.com/sms/logout.go',
+              'Verizon business account login')
     driver.quit()
 
 def yes_or_no(question):
