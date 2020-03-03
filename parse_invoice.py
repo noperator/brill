@@ -22,6 +22,14 @@ def get_share(soup, accountable_mtns, acct_subtotal):
 def create_table(headers):
     table = BeautifulTable()
     table.set_style(BeautifulTable.STYLE_BOX_ROUNDED)
+    table.intersect_top_left = '╒'
+    table.top_border_char = '═'
+    table.intersect_top_mid = '╤'
+    table.intersect_top_right = '╕'
+    table.intersect_header_left = '╞'
+    table.header_separator_char = '═'
+    table.intersect_header_mid = '╪'
+    table.intersect_header_right = '╡'
     table.column_headers = headers
     return table
 
