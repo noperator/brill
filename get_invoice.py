@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from json import loads
 from os import path, rename
 from pathlib import Path
 from sys import stdout, exit
@@ -148,18 +149,33 @@ def yes_or_no(question):
     else:
         return yes_or_no('Invalid response. Try again.')
 
+def xhr(driver, url):
+    js = '''var xhr = new XMLHttpRequest();
+            xhr.open('POST', '%s', false);
+            xhr.send();
+            return xhr.response;''' % url
+    return driver.execute_script(js);
+    
 if __name__== '__main__':
     config = load('config.toml')
     driver = setup(config['chrome'])
     login(driver, config['login'])
+
+    balance = driver.find_element_by_xpath('/html/body/div[6]/div/div[2]/div[2]/div[1]/accordion/div/div[1]/div[2]/div/div/div/div/div/div[2]/div/div/div[2]/div/div[2]/div[2]/div/div/div/div[5]').text
+    print('Real-time balance:', balance)
+
+    payments = xhr(driver, 'https://b2b.verizonwireless.com/sms/amsecure/payment/paymenthistorystatus/load.go')
+    print('Recent payments:')
+    for p in loads(payments)['data']['paymentHistoryStatusList']:
+        print('-', p['actionDate'], ':', str(p['paymentAmount']).rjust(6), str(p['paymentMethod']).ljust(7), p['paymentStatus'])
+
     dates = list_invoices(driver)
-    for i, date in enumerate(dates):
-        print('[' + str(i + 1) + ']', date['invoiceFormattedDate'])
-    choice = int(input('Choose invoice date index: ')) - 1
-    get_invoice(driver, choice, dates[choice]['invoiceFormattedDate'], config['chrome']['download_path'])
-    while yes_or_no('Would you like to get another invoice?'):
+    while True:
         for i, date in enumerate(dates):
-            print('[' + str(i + 1) + ']', date['invoiceFormattedDate'])
+            print('[' + str(f"{i + 1:0>2}") + ']', date['invoiceFormattedDate'])
         choice = int(input('Choose invoice date index: ')) - 1
         get_invoice(driver, choice, dates[choice]['invoiceFormattedDate'], config['chrome']['download_path'])
+        if not yes_or_no('Would you like to get another invoice?'):
+            break
+
     logout(driver)
