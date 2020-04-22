@@ -3,8 +3,8 @@
 from json import loads
 from os import path, rename
 from pathlib import Path
-from sys import stdout, exit
-from time import sleep
+from sys import argv, stdout, exit
+from time import sleep, perf_counter
 
 from selenium import webdriver  
 from selenium.webdriver.chrome.options import Options  
@@ -13,30 +13,42 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
 from toml import load
 
-# Debug:
-# from code import interact
-# from pprint import pprint
-# interact(local=locals())
+if len(argv) > 1 and '-d' in argv[1]:
+    debug = True
+else:
+    debug = False
+
+if debug:
+    from code import interact
+    from pprint import pprint
+
+def pause():
+    if debug:
+        interact(local=locals())
 
 def load_page(message, url, title):
     print(message + '...', end='')
     stdout.flush()
+    start = perf_counter()
     if url:
         driver.get(url)
     try:
         WebDriverWait(driver, 10).until(ec.title_contains(title))
-        print('success.')
+        print('success.', end=' ')
     except:
-        print('failed.')
+        print('failed.', end=' ')
+    end = perf_counter()
+    print('Took', round(end - start, 2), 'seconds.')
 
 def setup(chrome_config):
     print('Setting up...')
     
     # Set Chromium options and start WebDriver.
     chrome_options = Options()  
-    chrome_options.add_argument('--headless')  
+    if not debug:
+        chrome_options.add_argument('--headless')  
     chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--remote-debugging-port=' +       chrome_config['debug_port'])
+    chrome_options.add_argument('--remote-debugging-port=' + chrome_config['debug_port'])
     # chrome_options.add_argument('--proxy-server=' + proxy.proxy)
     chrome_options.binary_location = chrome_config['chromium_path']
     driver = webdriver.Chrome(
@@ -95,7 +107,7 @@ def list_invoices(driver):
     dates = None
     while not dates:
         sleep(1)
-        dates = driver.execute_script('return angular.element($(\'#statementdates\')).scope().overview.invoiceData')
+        dates = driver.execute_script("return angular.element($('#statementdates')).scope().overview.invoiceData")
     return dates
 
 def get_invoice(driver, choice, date_str, download_path):
@@ -106,7 +118,7 @@ def get_invoice(driver, choice, date_str, download_path):
     # Load invoice data for specified date.
     while True:
         try:
-            overview = "angular.element($(\'#statementdates\')).scope().overview"
+            overview = "angular.element($('#statementdates')).scope().overview"
             date = overview + '.invoiceData[' + str(choice) + ']'
             driver.execute_script('return ' + overview + '.updateQuickBillSummaryDataByDate(' + date + ')')
             break
