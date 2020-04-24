@@ -13,10 +13,8 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
 from toml import load
 
-if len(argv) > 1 and '-d' in argv[1]:
-    debug = True
-else:
-    debug = False
+debug = '-d' in argv
+check = '-c' in argv
 
 if debug:
     from code import interact
@@ -179,15 +177,20 @@ if __name__== '__main__':
     payments = xhr(driver, 'https://b2b.verizonwireless.com/sms/amsecure/payment/paymenthistorystatus/load.go')
     print('Recent payments:')
     for p in loads(payments)['data']['paymentHistoryStatusList']:
-        print('-', p['actionDate'], ':', str(p['paymentAmount']).rjust(6), str(p['paymentMethod']).ljust(7), p['paymentStatus'])
+        print('-',
+              p['actionDate'],
+              ':', str(p['paymentAmount']).rjust(6),
+              str(p['paymentMethod']).ljust(7),
+              p['paymentStatus'])
 
-    dates = list_invoices(driver)
-    while True:
-        for i, date in enumerate(dates):
-            print('[' + str(f"{i + 1:0>2}") + ']', date['invoiceFormattedDate'])
-        choice = int(input('Choose invoice date index: ')) - 1
-        get_invoice(driver, choice, dates[choice]['invoiceFormattedDate'], config['chrome']['download_path'])
-        if not yes_or_no('Would you like to get another invoice?'):
-            break
+    if not check:
+        dates = list_invoices(driver)
+        while True:
+            for i, date in enumerate(dates):
+                print('[' + str(f"{i + 1:0>2}") + ']', date['invoiceFormattedDate'])
+            choice = int(input('Choose invoice date index: ')) - 1
+            get_invoice(driver, choice, dates[choice]['invoiceFormattedDate'], config['chrome']['download_path'])
+            if not yes_or_no('Would you like to get another invoice?'):
+                break
 
     logout(driver)
