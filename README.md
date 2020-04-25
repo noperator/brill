@@ -21,12 +21,12 @@ Configure `config.toml` as needed, using `config_example.toml` as a reference. E
 ### Usage
 Fetch invoices:
 ```
-python3 get_invoice.py
+python3 audit_account.py
 ```
 
 Parse an invoice:
 ```
-$ python3 parse_invoice.py breakdown_feb_13_2020.xml
+python3 parse_invoice.py breakdown_feb_13_2020.xml
 Invoice: breakdown_feb_13_2020.xml
 ╭──────────────────┬────────╮
 │       Item       │  Cost  │
