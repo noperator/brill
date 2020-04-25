@@ -6,6 +6,7 @@ from pathlib import Path
 from sys import argv, stdout, exit
 from time import sleep, perf_counter
 
+from beautifultable import BeautifulTable
 from selenium import webdriver  
 from selenium.webdriver.chrome.options import Options  
 from selenium.webdriver.common.keys import Keys  
@@ -40,7 +41,7 @@ def load_page(message, url, title):
 
 def setup(chrome_config):
     print('Setting up...')
-    
+
     # Set Chromium options and start WebDriver.
     chrome_options = Options()  
     if not debug:
@@ -54,7 +55,7 @@ def setup(chrome_config):
         options=chrome_options
         # service_args=['--verbose', '--log-path=./chromedriver.log']
     )
-    
+
     # Enable automatic downloads to specified directory.
     driver.command_executor._commands['send_command'] = ('POST', '/session/$sessionId/chromium/send_command')
     params = {'cmd': 'Page.setDownloadBehavior', 'params': {'behavior': 'allow', 'downloadPath': chrome_config['download_path']}}
@@ -65,20 +66,18 @@ def login(driver, login_config):
     load_page('Requesting home page',
               'https://b2b.verizonwireless.com/',
               'Verizon business account login')
-    
+
     # Populate login form with credentials and submit.
-    print('Submitting credentials...')
+    print('Submitting credentials and waiting for login confirmation...', end='')
     driver.find_element_by_name('userId').send_keys(login_config['user_id'])
     driver.find_element_by_name('password').send_keys(login_config['password'])
     driver.find_element_by_xpath("//*[@type='submit']").send_keys(Keys.ENTER)
-
-    print('Waiting for login confirmation...', end='')
     stdout.flush()
     try:
         WebDriverWait(driver, 10).until(ec.title_contains('Landing Overview Page'))
         print('success.')
     except:
-        print('unsuccessful.')
+        print('failed.')
         print('Checking if OTP necessary...', end='')
         stdout.flush()
         try:
@@ -100,7 +99,7 @@ def list_invoices(driver):
     load_page('Listing invoices',
               'https://epb.verizonwireless.com/epass/reporting/main.go#/viewInvoices',
               'Wireless Reports')
-    
+
     # Get list of invoice dates from dropdown menu.
     dates = None
     while not dates:
@@ -108,7 +107,14 @@ def list_invoices(driver):
         dates = driver.execute_script("return angular.element($('#statementdates')).scope().overview.invoiceData")
     return dates
 
-def get_invoice(driver, choice, date_str, download_path):
+def get_invoice(driver, dates, download_path):
+
+    # Prompt user to specify which invoice to download.
+    for i, date in enumerate(dates):
+        print('[' + str(f"{i + 1:0>2}") + ']', date['invoiceFormattedDate'])
+    choice = int(input('Choose invoice date index: ')) - 1
+    date_str = dates[choice]['invoiceFormattedDate']
+
     load_page('Getting invoice page',
               'https://epb.verizonwireless.com/epass/reporting/main.go#/viewInvoices',
               'Wireless Reports')
@@ -135,7 +141,7 @@ def get_invoice(driver, choice, date_str, download_path):
     print('Downloading bill...', end='')
     stdout.flush()
     driver.get('https://b2b.verizonwireless.com/sms/amsecure/bdownchargesusage/downloadTotalCharges.go?downloadType=XML')
-    
+
     # Wait for download to finish, and rename XML file.
     while not list(Path(download_path).glob('Breakdown*')):
         sleep(1)
@@ -165,31 +171,34 @@ def xhr(driver, url):
             xhr.send();
             return xhr.response;''' % url
     return driver.execute_script(js);
-    
+
+def get_payments(driver):
+    payments = xhr(driver, 'https://b2b.verizonwireless.com/sms/amsecure/payment/paymenthistorystatus/load.go')
+    table = BeautifulTable()
+    table.set_style(BeautifulTable.STYLE_COMPACT)
+    table.column_headers = ('Date', 'Amount', 'Method', 'Status')
+    for p in loads(payments)['data']['paymentHistoryStatusList']:
+        table.append_row((p['actionDate'],
+                          '$' + str('{:.2f}'.format(float(p['paymentAmount']))),
+                          p['paymentMethod'],
+                          p['paymentStatus']))
+    return table
+
+def get_balance(driver):
+    return driver.find_element_by_xpath('/html/body/div[6]/div/div[2]/div[2]/div[1]/accordion/div/div[1]/div[2]/div/div/div/div/div/div[2]/div/div/div[2]/div/div[2]/div[2]/div/div/div/div[5]').text
+
 if __name__== '__main__':
     config = load('config.toml')
     driver = setup(config['chrome'])
     login(driver, config['login'])
 
-    balance = driver.find_element_by_xpath('/html/body/div[6]/div/div[2]/div[2]/div[1]/accordion/div/div[1]/div[2]/div/div/div/div/div/div[2]/div/div/div[2]/div/div[2]/div[2]/div/div/div/div[5]').text
-    print('Real-time balance:', balance)
-
-    payments = xhr(driver, 'https://b2b.verizonwireless.com/sms/amsecure/payment/paymenthistorystatus/load.go')
-    print('Recent payments:')
-    for p in loads(payments)['data']['paymentHistoryStatusList']:
-        print('-',
-              p['actionDate'],
-              ':', str(p['paymentAmount']).rjust(6),
-              str(p['paymentMethod']).ljust(7),
-              p['paymentStatus'])
+    print('Real-time balance:', get_balance(driver))
+    print('Recent payments:\n', get_payments(driver))
 
     if not check:
         dates = list_invoices(driver)
         while True:
-            for i, date in enumerate(dates):
-                print('[' + str(f"{i + 1:0>2}") + ']', date['invoiceFormattedDate'])
-            choice = int(input('Choose invoice date index: ')) - 1
-            get_invoice(driver, choice, dates[choice]['invoiceFormattedDate'], config['chrome']['download_path'])
+            get_invoice(driver, dates, config['chrome']['download_path'])
             if not yes_or_no('Would you like to get another invoice?'):
                 break
 
