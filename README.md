@@ -16,17 +16,48 @@ python3 -m pip install -U pip
 python3 -m pip install -r requirements.txt
 ```
 
-Configure `config.toml` as needed, using `config_example.toml` as a reference. Ensure that you've installed matching versions of Chromium and ChromeDriver; you can find specific versions of both on the [Download Chromium page](https://www.chromium.org/getting-involved/download-chromium).
+Configure `config.toml` as needed. Ensure that you've installed matching versions of Chromium and ChromeDriver; you can find specific versions of both on the [Download Chromium page](https://www.chromium.org/getting-involved/download-chromium).
 
 ### Usage
-Fetch invoices:
+Check balance and recent payments, and (if not specifying `-c` option) and fetch invoices:
 ```
-python3 audit_account.py
+$ python3 audit_account.py
+Setting up...
+Requesting home page...success. Took 2.21 seconds.
+Submitting credentials and waiting for login confirmation...success.
+Real-time balance: $325.16
+Recent payments:
+      Date       Amount    Method    Status
+-------------- --------- --------- ---------
+ Apr 23, 2020   $64.15    XXX1234   Success
+ Apr 22, 2020   $137.53   XXX2345   Success
+ Jan 15, 2020    $0.00     None     Success
+ Dec 28, 2019   $122.82   XXX3456   Success
+ Dec 28, 2019   $122.82   XXX3456   Failed
+Listing invoices...success. Took 4.08 seconds.
+[01] Apr 13, 2020
+[02] Mar 13, 2020
+[03] Feb 13, 2020
+[04] Jan 13, 2020
+[05] Dec 13, 2019
+[06] Nov 13, 2019
+[07] Oct 13, 2019
+[08] Sep 13, 2019
+[09] Aug 13, 2019
+[10] Jul 13, 2019
+[11] Jun 13, 2019
+[12] May 13, 2019
+Choose invoice date index: 3
+Getting invoice page...success. Took 0.04 seconds.
+Getting breakdown page...success.
+Downloading bill...breakdown_feb_13_2020.xml
+Would you like to get another invoice? (y/n): n
+Logging out...success. Took 6.7 seconds.
 ```
 
 Parse an invoice:
 ```
-python3 parse_invoice.py breakdown_feb_13_2020.xml
+$ python3 parse_invoice.py breakdown_feb_13_2020.xml
 Invoice: breakdown_feb_13_2020.xml
 ╭──────────────────┬────────╮
 │       Item       │  Cost  │
