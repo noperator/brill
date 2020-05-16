@@ -78,3 +78,8 @@ Invoice: breakdown_feb_13_2020.xml
 │           Total            │ 176.42 │
 ╰────────────────────────────┴────────╯
 ```
+
+### Todo
+
+- Timeout for invalid invoice
+- Gracefully handle `SIGINT` (i.e., log out and stop WebDriver)
