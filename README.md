@@ -1,10 +1,18 @@
+# Brill
+
+Download and parse invoices from Verizon business accounts.
+
 <div align="center">
-  <img src="https://i.imgflip.com/3r3rm5.jpg" />
+  <kbd>
+    <img src="https://i.imgflip.com/3r3rm5.jpg" />
+  </kbd>
 </div>
 
-### Description
+## Description
 
 The web interface for [Verizon My Business](b2b.verizonwireless.com/) is a pain to use. The invoice breakdowns are hard to make sense of, too. Brill uses Selenium to automate the process of logging in, listing/downloading invoices, and logging out; it'll then parse the invoices for you and group them according to the families that are sharing a single account.
+
+## Getting started
 
 ### Install
 
@@ -16,10 +24,14 @@ python3 -m pip install -U pip
 python3 -m pip install -r requirements.txt
 ```
 
+### Configure
+
 Configure `config.toml` as needed. Ensure that you've installed matching versions of Chromium and ChromeDriver; you can find specific versions of both on the [Download Chromium page](https://www.chromium.org/getting-involved/download-chromium).
 
 ### Usage
+
 Check balance and recent payments, and (if not specifying `-c` option) and fetch invoices:
+
 ```
 $ python3 audit_account.py
 Setting up...
@@ -56,6 +68,7 @@ Logging out...success. Took 6.7 seconds.
 ```
 
 Parse an invoice:
+
 ```
 $ python3 parse_invoice.py breakdown_feb_13_2020.xml
 Invoice: breakdown_feb_13_2020.xml
@@ -79,7 +92,14 @@ Invoice: breakdown_feb_13_2020.xml
 ╰────────────────────────────┴────────╯
 ```
 
-### Todo
+## Back matter
 
-- Timeout for invalid invoice
-- Gracefully handle `SIGINT` (i.e., log out and stop WebDriver)
+### To-do
+
+- [ ] Time out for invalid invoice
+- [ ] Gracefully handle `SIGINT` (i.e., log out and stop WebDriver)
+- [ ] Force two decimal places in BeautifulTable (currently shows between 1–3)
+
+### License
+
+This project is licensed under the [MIT License](LICENSE.md).
