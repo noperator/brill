@@ -153,7 +153,7 @@ def get_invoice(driver, dates, download_path):
 def logout(driver):
     load_page('Logging out',
               'https://b2b.verizonwireless.com/sms/logout.go',
-              'Verizon business account login')
+              'Verizon Business Account Sign In')
     driver.quit()
 
 def yes_or_no(question):
