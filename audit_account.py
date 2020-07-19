@@ -65,7 +65,7 @@ def setup(chrome_config):
 def login(driver, login_config):
     load_page('Requesting home page',
               'https://b2b.verizonwireless.com/',
-              'Verizon business account login')
+              'Verizon Business Account Sign In')
 
     # Populate login form with credentials and submit.
     print('Submitting credentials and waiting for login confirmation...', end='')
@@ -74,7 +74,7 @@ def login(driver, login_config):
     driver.find_element_by_xpath("//*[@type='submit']").send_keys(Keys.ENTER)
     stdout.flush()
     try:
-        WebDriverWait(driver, 10).until(ec.title_contains('Landing Overview Page'))
+        WebDriverWait(driver, 10).until(ec.title_contains('MyBusiness'))
         print('success.')
     except:
         print('failed.')
@@ -167,13 +167,15 @@ def yes_or_no(question):
 
 def xhr(driver, url):
     js = '''var xhr = new XMLHttpRequest();
-            xhr.open('POST', '%s', false);
             xhr.send();
             return xhr.response;''' % url
     return driver.execute_script(js);
 
 def get_payments(driver):
-    payments = xhr(driver, 'https://b2b.verizonwireless.com/sms/amsecure/payment/paymenthistorystatus/load.go')
+    load_page('Getting payments',
+              'https://b2b.verizonwireless.com/sms/amsecure/payment/paymenthistorystatus/load.go',
+              '')
+    payments = driver.find_element_by_tag_name('pre').text
     table = BeautifulTable()
     table.set_style(BeautifulTable.STYLE_COMPACT)
     table.column_headers = ('Date', 'Amount', 'Method', 'Status')
@@ -182,10 +184,11 @@ def get_payments(driver):
                           '$' + str('{:.2f}'.format(float(p['paymentAmount']))),
                           p['paymentMethod'],
                           p['paymentStatus']))
+    driver.execute_script('window.history.go(-1)')
     return table
 
 def get_balance(driver):
-    return driver.find_element_by_xpath('/html/body/div[6]/div/div[2]/div[2]/div[1]/accordion/div/div[1]/div[2]/div/div/div/div/div/div[2]/div/div/div[2]/div/div[2]/div[2]/div/div/div/div[5]').text
+    return driver.find_element_by_xpath('/html/body/app-root/app-main/app-dashboard/div[3]/app-billing/div/div[2]/div/div/swiper/div/div[1]/div[1]/div/div/div/div/div[1]/div[2]').text
 
 if __name__== '__main__':
     config = load('config.toml')
