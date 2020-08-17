@@ -29,8 +29,7 @@ def load_page(message, url, title):
     print(message + '...', end='')
     stdout.flush()
     start = perf_counter()
-    if url:
-        driver.get(url)
+    driver.get(url)
     try:
         WebDriverWait(driver, 10).until(ec.title_contains(title))
         print('success.', end=' ')
@@ -88,7 +87,7 @@ def login(driver, login_config):
             driver.find_element_by_name('otpCode').send_keys(otp_code)
             driver.find_element_by_xpath("//button[contains(.,'Verify and register device')]").send_keys(Keys.ENTER)
             try:
-                WebDriverWait(driver, 10).until(ec.title_contains('Landing Overview Page'))
+                WebDriverWait(driver, 10).until(ec.title_contains('MyBusiness'))
                 print('success.')
             except:
                 exit('login unsuccessful.')
@@ -188,7 +187,7 @@ def get_payments(driver):
     return table
 
 def get_balance(driver):
-    return driver.find_element_by_xpath('/html/body/app-root/app-main/app-dashboard/div[3]/app-billing/div/div[2]/div/div/swiper/div/div[1]/div[1]/div/div/div/div/div[1]/div[2]').text
+    return driver.find_element_by_xpath('/html/body/app-root/app-main/app-dashboard/div[3]/app-billing/div/div[2]/div/div/swiper/div[1]/div[1]/div/div/div/div/div[1]/div[2]').text
 
 if __name__== '__main__':
     config = load('config.toml')
